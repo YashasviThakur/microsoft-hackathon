@@ -403,57 +403,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Microsoft Tech Stack — Agents League Hackathon */}
-      <section className="bg-[#1A1A14] py-24 px-8">
-        <div className="max-w-[1400px] mx-auto">
-          <div className="mb-14">
-            <p className="dm-label text-dm-dim mb-5">Microsoft Agents League 2026</p>
-            <h2 className="text-display-md text-white max-w-2xl">
-              Built on Microsoft.<br />Powered to win.
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-px bg-white/10 border border-white/10">
-            {/* Phi-4 */}
-            <div className="bg-[#1A1A14] p-8 hover:bg-white/5 transition-colors">
-              <div className="w-10 h-10 bg-[#0078D4]/20 border border-[#0078D4]/30 flex items-center justify-center mb-6">
-                <span className="text-[#0078D4] font-black text-sm">Φ</span>
-              </div>
-              <h3 className="font-bold text-white text-base mb-2">Microsoft Phi-4</h3>
-              <p className="text-white/40 text-sm font-light leading-relaxed mb-4">
-                Microsoft's flagship small language model. Powers the multi-step AI Coach agent — fetches live data, reasons across 8 sources, schedules events.
-              </p>
-              <span className="text-[10px] font-mono text-[#0078D4] uppercase tracking-widest">Primary AI · Agent Reasoning</span>
-            </div>
-            {/* GitHub Models */}
-            <div className="bg-[#1A1A14] p-8 hover:bg-white/5 transition-colors">
-              <div className="w-10 h-10 bg-white/10 border border-white/20 flex items-center justify-center mb-6">
-                <Github size={16} className="text-white/70" />
-              </div>
-              <h3 className="font-bold text-white text-base mb-2">GitHub Models</h3>
-              <p className="text-white/40 text-sm font-light leading-relaxed mb-4">
-                Azure AI infrastructure via GitHub. OpenAI-compatible API serving Phi-4 with zero cloud setup — free for all developers.
-              </p>
-              <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest">Azure AI Infrastructure</span>
-            </div>
-            {/* GitHub Copilot */}
-            <div className="bg-[#1A1A14] p-8 hover:bg-white/5 transition-colors">
-              <div className="w-10 h-10 bg-[#6E40C9]/20 border border-[#6E40C9]/30 flex items-center justify-center mb-6">
-                <span className="text-[#6E40C9] font-black text-sm">✦</span>
-              </div>
-              <h3 className="font-bold text-white text-base mb-2">GitHub Copilot</h3>
-              <p className="text-white/40 text-sm font-light leading-relaxed mb-4">
-                Used throughout development — agent tool definitions, API migrations, frontend components, and architecture decisions all accelerated by Copilot.
-              </p>
-              <span className="text-[10px] font-mono text-[#6E40C9] uppercase tracking-widest">Dev Acceleration · Creative Apps</span>
-            </div>
-          </div>
-          <div className="mt-6 flex items-center gap-3 text-[11px] font-mono text-white/20">
-            <span className="w-2 h-2 rounded-full bg-[#0078D4] animate-pulse" />
-            <span>models.inference.ai.azure.com · OpenAI-compatible · Phi-4 · 8 live data sources · Multi-step agent loop</span>
-          </div>
-        </div>
-      </section>
-
       {/* Account tiers */}
       <section id="accounts" className="bg-[#F5F0E8] py-28 px-8">
         <div className="max-w-[1400px] mx-auto">
