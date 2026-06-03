@@ -1,6 +1,6 @@
 """
-DevMirror — Gemini agentic loop using REST API directly (no SDK).
-Uses requests.post() so the API key is always read fresh from env vars.
+DevMirror — Phi-4 agentic loop via GitHub Models (OpenAI-compatible endpoint).
+Uses the openai SDK pointed at models.inference.ai.azure.com with a GitHub PAT.
 """
 
 import json
@@ -9,119 +9,143 @@ import os
 from datetime import datetime
 from typing import Any, Optional
 
-import requests
+from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
-# ── Tool declarations ──────────────────────────────────────────────────────────
+# ── Tool declarations (OpenAI function-calling format) ─────────────────────────
 
 _TOOL_DECLARATIONS = [
     {
-        "name": "fetch_github_stats",
-        "description": (
-            "Fetch live GitHub statistics for a developer: repos, commits this week, "
-            "top repository, languages, followers, contribution grid."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "username": {"type": "string", "description": "GitHub username"}
+        "type": "function",
+        "function": {
+            "name": "fetch_github_stats",
+            "description": (
+                "Fetch live GitHub statistics for a developer: repos, commits this week, "
+                "top repository, languages, followers, contribution grid."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "username": {"type": "string", "description": "GitHub username"}
+                },
+                "required": ["username"],
             },
-            "required": ["username"],
         },
     },
     {
-        "name": "fetch_leetcode_stats",
-        "description": (
-            "Fetch LeetCode statistics: total problems solved, difficulty breakdown "
-            "(easy/medium/hard), current streak, acceptance rate, ranking."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "username": {"type": "string", "description": "LeetCode username"}
+        "type": "function",
+        "function": {
+            "name": "fetch_leetcode_stats",
+            "description": (
+                "Fetch LeetCode statistics: total problems solved, difficulty breakdown "
+                "(easy/medium/hard), current streak, acceptance rate, ranking."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "username": {"type": "string", "description": "LeetCode username"}
+                },
+                "required": ["username"],
             },
-            "required": ["username"],
         },
     },
     {
-        "name": "fetch_codeforces_stats",
-        "description": (
-            "Fetch Codeforces stats: rating, rank, max rating, problems solved, "
-            "recent submission verdicts."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "handle": {"type": "string", "description": "Codeforces handle"}
+        "type": "function",
+        "function": {
+            "name": "fetch_codeforces_stats",
+            "description": (
+                "Fetch Codeforces stats: rating, rank, max rating, problems solved, "
+                "recent submission verdicts."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "handle": {"type": "string", "description": "Codeforces handle"}
+                },
+                "required": ["handle"],
             },
-            "required": ["handle"],
         },
     },
     {
-        "name": "fetch_gitlab_stats",
-        "description": (
-            "Fetch GitLab statistics: total projects, commits this week, open merge "
-            "requests, top project, languages used."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "username": {"type": "string", "description": "GitLab username"},
-                "token":    {"type": "string", "description": "GitLab personal access token"},
+        "type": "function",
+        "function": {
+            "name": "fetch_gitlab_stats",
+            "description": (
+                "Fetch GitLab statistics: total projects, commits this week, open merge "
+                "requests, top project, languages used."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "username": {"type": "string", "description": "GitLab username"},
+                    "token":    {"type": "string", "description": "GitLab personal access token"},
+                },
+                "required": ["username", "token"],
             },
-            "required": ["username", "token"],
         },
     },
     {
-        "name": "fetch_gmail_opportunities",
-        "description": (
-            "Fetch filtered Gmail emails about internships, hackathons, and scholarships "
-            "for the authenticated user."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "integer", "description": "DevMirror user ID"}
+        "type": "function",
+        "function": {
+            "name": "fetch_gmail_opportunities",
+            "description": (
+                "Fetch filtered Gmail emails about internships, hackathons, and scholarships "
+                "for the authenticated user."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "integer", "description": "DevMirror user ID"}
+                },
+                "required": ["user_id"],
             },
-            "required": ["user_id"],
         },
     },
     {
-        "name": "fetch_calendar_events",
-        "description": "Fetch upcoming Google Calendar events for the authenticated user.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "integer", "description": "DevMirror user ID"}
+        "type": "function",
+        "function": {
+            "name": "fetch_calendar_events",
+            "description": "Fetch upcoming Google Calendar events for the authenticated user.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "integer", "description": "DevMirror user ID"}
+                },
+                "required": ["user_id"],
             },
-            "required": ["user_id"],
         },
     },
     {
-        "name": "schedule_calendar_event",
-        "description": "Create a new Google Calendar event for the user.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "user_id":     {"type": "integer"},
-                "summary":     {"type": "string", "description": "Event title"},
-                "description": {"type": "string", "description": "Event description"},
-                "start_time":  {"type": "string", "description": "ISO 8601 start datetime"},
-                "end_time":    {"type": "string", "description": "ISO 8601 end datetime"},
+        "type": "function",
+        "function": {
+            "name": "schedule_calendar_event",
+            "description": "Create a new Google Calendar event for the user.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id":     {"type": "integer"},
+                    "summary":     {"type": "string", "description": "Event title"},
+                    "description": {"type": "string", "description": "Event description"},
+                    "start_time":  {"type": "string", "description": "ISO 8601 start datetime"},
+                    "end_time":    {"type": "string", "description": "ISO 8601 end datetime"},
+                },
+                "required": ["user_id", "summary", "start_time", "end_time"],
             },
-            "required": ["user_id", "summary", "start_time", "end_time"],
         },
     },
     {
-        "name": "get_user_profile",
-        "description": "Get the user's goals, handles, and linked account info from DevMirror.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "integer", "description": "DevMirror user ID"}
+        "type": "function",
+        "function": {
+            "name": "get_user_profile",
+            "description": "Get the user's goals, handles, and linked account info from DevMirror.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "integer", "description": "DevMirror user ID"}
+                },
+                "required": ["user_id"],
             },
-            "required": ["user_id"],
         },
     },
 ]
@@ -129,7 +153,7 @@ _TOOL_DECLARATIONS = [
 
 # ── System prompt ──────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = """You are DevMirror Coach — an elite AI agent for software engineers and CS students, powered by Google Cloud and Gemini.
+_SYSTEM_PROMPT = """You are DevMirror Coach — an elite AI agent for software engineers and CS students, powered by Microsoft Phi-4 via GitHub Models.
 
 You have access to tools that fetch LIVE data from the user's developer accounts: GitHub, GitLab, LeetCode, Codeforces, Gmail, and Google Calendar.
 
@@ -217,28 +241,27 @@ class AgentContext:
         return {"error": f"Unknown tool: {name}"}
 
 
-# ── REST-based agentic loop ────────────────────────────────────────────────────
+# ── Phi-4 agentic loop via GitHub Models ──────────────────────────────────────
 
 def run_agent(
     question: str,
     ctx: AgentContext,
     max_turns: int = 6,
 ) -> dict[str, Any]:
-    # Read key fresh on every call — avoids any SDK-level caching
-    api_key = os.getenv("GEMINI_API_KEY", "")
-    model   = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    api_key = os.getenv("GITHUB_MODELS_TOKEN", "")
+    model   = os.getenv("GITHUB_MODELS_MODEL", "Phi-4")
 
     if not api_key:
         return {
-            "response":         "Gemini API key not configured.",
+            "response":         "GitHub Models token not configured.",
             "tool_calls":       [],
             "is_schedule":      False,
             "scheduled_events": [],
         }
 
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{model}:generateContent?key={api_key}"
+    client = OpenAI(
+        base_url="https://models.inference.ai.azure.com",
+        api_key=api_key,
     )
 
     system_prompt = _SYSTEM_PROMPT.format(
@@ -248,63 +271,65 @@ def run_agent(
         goal_3=ctx.goal_3 or "Not set",
     )
 
-    contents: list[dict] = [{"role": "user", "parts": [{"text": question}]}]
-    tools = [{"function_declarations": _TOOL_DECLARATIONS}]
+    messages: list[dict] = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user",   "content": question},
+    ]
 
     all_tool_calls: list[dict] = []
     scheduled_events: list[dict] = []
     is_schedule = False
 
     for turn in range(max_turns):
-        payload = {
-            "system_instruction": {"parts": [{"text": system_prompt}]},
-            "contents":           contents,
-            "tools":              tools,
-            "generationConfig":   {"temperature": 0.7, "maxOutputTokens": 1024},
-        }
-
         try:
-            resp = requests.post(url, json=payload, timeout=45)
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=_TOOL_DECLARATIONS,
+                tool_choice="auto",
+                temperature=0.7,
+                max_tokens=1024,
+            )
         except Exception as e:
-            logger.error(f"[Agent] network error: {e}")
-            return {"response": "Could not reach AI service. Check your connection.", "tool_calls": all_tool_calls, "is_schedule": False, "scheduled_events": []}
-
-        if resp.status_code == 429:
-            return {"response": "The AI coach is temporarily rate-limited. Please try again in a few minutes.", "tool_calls": all_tool_calls, "is_schedule": False, "scheduled_events": []}
-
-        if resp.status_code != 200:
-            err = resp.text[:300]
-            logger.error(f"[Agent] Gemini error {resp.status_code}: {err}")
-            return {"response": f"AI service error ({resp.status_code}): {err[:150]}", "tool_calls": all_tool_calls, "is_schedule": False, "scheduled_events": []}
-
-        data       = resp.json()
-        candidates = data.get("candidates", [])
-        if not candidates:
-            return {"response": "No response from AI.", "tool_calls": all_tool_calls, "is_schedule": is_schedule, "scheduled_events": scheduled_events}
-
-        parts = candidates[0].get("content", {}).get("parts", [])
-
-        # Add model turn to history
-        contents.append({"role": "model", "parts": parts})
-
-        # Check for function calls
-        fn_calls = [p["functionCall"] for p in parts if "functionCall" in p]
-
-        if not fn_calls:
-            # Final text response
-            text = "".join(p.get("text", "") for p in parts).strip()
+            logger.error(f"[Agent] API error turn {turn}: {e}")
             return {
-                "response":         text or "I couldn't generate a response. Please try again.",
+                "response":         "Could not reach AI service. Check your connection.",
+                "tool_calls":       all_tool_calls,
+                "is_schedule":      False,
+                "scheduled_events": [],
+            }
+
+        msg = response.choices[0].message
+
+        # Append assistant turn to history
+        assistant_turn: dict = {"role": "assistant", "content": msg.content or ""}
+        if msg.tool_calls:
+            assistant_turn["tool_calls"] = [
+                {
+                    "id":       tc.id,
+                    "type":     "function",
+                    "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                }
+                for tc in msg.tool_calls
+            ]
+        messages.append(assistant_turn)
+
+        # No tool calls → final answer
+        if not msg.tool_calls:
+            return {
+                "response":         msg.content or "I couldn't generate a response. Please try again.",
                 "tool_calls":       all_tool_calls,
                 "is_schedule":      is_schedule,
                 "scheduled_events": scheduled_events,
             }
 
-        # Execute tools and collect responses
-        fn_response_parts = []
-        for fn_call in fn_calls:
-            tool_name = fn_call.get("name", "")
-            tool_args = fn_call.get("args", {})
+        # Execute each tool and append results
+        for tc in msg.tool_calls:
+            tool_name = tc.function.name
+            try:
+                tool_args = json.loads(tc.function.arguments)
+            except json.JSONDecodeError:
+                tool_args = {}
 
             logger.info(f"[Agent] calling tool: {tool_name}({list(tool_args.keys())})")
             all_tool_calls.append({"tool": tool_name, "args": list(tool_args.keys())})
@@ -319,19 +344,21 @@ def run_agent(
                     "end":     result.get("end_time", ""),
                 })
 
-            fn_response_parts.append({
-                "functionResponse": {
-                    "name":     tool_name,
-                    "response": {"result": _safe_json(result)},
-                }
+            messages.append({
+                "role":         "tool",
+                "tool_call_id": tc.id,
+                "content":      json.dumps(_safe_json(result)),
             })
 
-        contents.append({"role": "user", "parts": fn_response_parts})
+    # Max turns reached — return last assistant content we have
+    last_text = ""
+    for m in reversed(messages):
+        if m.get("role") == "assistant" and m.get("content"):
+            last_text = m["content"]
+            break
 
-    # Max turns hit — return whatever we have
-    text = "".join(p.get("text", "") for p in parts).strip()
     return {
-        "response":         text or "I've processed your request.",
+        "response":         last_text or "I've processed your request.",
         "tool_calls":       all_tool_calls,
         "is_schedule":      is_schedule,
         "scheduled_events": scheduled_events,

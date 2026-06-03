@@ -279,7 +279,7 @@ export default function Coach() {
   return (
     <PageShell
       title="AI Coach"
-      subtitle="Powered by Gemini 3 · Multi-step agent · Knows your goals · Can schedule Calendar events"
+      subtitle="Powered by Microsoft Phi-4 · Multi-step agent · Knows your goals · Can schedule Calendar events"
     >
       <div className="flex flex-col h-[calc(100vh-10rem)] max-h-[820px] gap-5">
         {/* Today's nudge */}
@@ -312,7 +312,7 @@ export default function Coach() {
           <div className="flex items-center gap-2 px-4 py-3 border-b border-dm-border bg-dm-surface-2/60 shrink-0">
             <Terminal size={13} className="text-dm-muted" />
             <span className="text-xs text-dm-muted font-mono">devmirror:~/coach</span>
-            <span className="ml-auto dm-badge-purple text-[10px]">Gemini 3 Agent</span>
+            <span className="ml-auto dm-badge-purple text-[10px]">Phi-4 Agent</span>
           </div>
 
           {/* Messages */}

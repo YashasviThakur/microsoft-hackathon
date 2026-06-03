@@ -78,13 +78,13 @@ app.add_middleware(
 )
 app.include_router(auth_router)
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-COHERE_API_KEY = os.getenv("COHERE_API_KEY", "")
-GITHUB_TOKEN   = os.getenv("GITHUB_TOKEN", "")
-GITLAB_TOKEN   = os.getenv("GITLAB_TOKEN", "")
+GITHUB_MODELS_TOKEN = os.getenv("GITHUB_MODELS_TOKEN", "")
+COHERE_API_KEY      = os.getenv("COHERE_API_KEY", "")
+GITHUB_TOKEN        = os.getenv("GITHUB_TOKEN", "")
+GITLAB_TOKEN        = os.getenv("GITLAB_TOKEN", "")
 
 USE_COHERE = bool(COHERE_API_KEY)
-logger.info(f"AI backend: {'Gemini 3 Agent' if GEMINI_API_KEY else 'unavailable'} | MongoDB: {bool(os.getenv('MONGODB_URI'))} | GitLab: {bool(GITLAB_TOKEN)}")
+logger.info(f"AI backend: {'Phi-4 via GitHub Models' if GITHUB_MODELS_TOKEN else 'unavailable'} | MongoDB: {bool(os.getenv('MONGODB_URI'))} | GitLab: {bool(GITLAB_TOKEN)}")
 
 
 @app.on_event("startup")
@@ -769,10 +769,11 @@ def _match_tech_cat(title_lower: str, kws: list[str]) -> bool:
     return False
 
 
-def _classify_videos_gemini(titles: list[str]) -> list[dict]:
-    """Ask Gemini to classify video titles. Returns list of {index (0-based), category}."""
-    if not GEMINI_API_KEY or not titles:
+def _classify_videos_phi4(titles: list[str]) -> list[dict]:
+    """Ask Phi-4 via GitHub Models to classify video titles. Returns list of {index, category}."""
+    if not GITHUB_MODELS_TOKEN or not titles:
         return []
+    from openai import OpenAI
     numbered = "\n".join(f"{i+1}. {t}" for i, t in enumerate(titles))
     prompt = (
         "You are a classifier that identifies YouTube videos related to software development, computer science, or tech learning.\n\n"
@@ -786,28 +787,23 @@ def _classify_videos_gemini(titles: list[str]) -> list[dict]:
         "If none qualify, return: []"
     )
     try:
-        url = GEMINI_URL.format(key=GEMINI_API_KEY)
-        payload = {
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 2000},
-        }
-        resp = requests.post(url, json=payload, timeout=30)
-        if resp.status_code in (429, 503):
-            print("[YouTube classifier] Gemini rate-limited, falling back to keywords")
-            return []
-        if resp.status_code != 200:
-            print(f"[YouTube classifier] Gemini error {resp.status_code}, falling back to keywords")
-            return []
-        text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-        print(f"[YouTube classifier] Gemini raw response: {text[:300]}")
+        client = OpenAI(base_url=GITHUB_MODELS_ENDPOINT, api_key=GITHUB_MODELS_TOKEN)
+        response = client.chat.completions.create(
+            model=os.getenv("GITHUB_MODELS_MODEL", "Phi-4"),
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=2000,
+        )
+        text = response.choices[0].message.content.strip()
+        print(f"[YouTube classifier] Phi-4 raw response: {text[:300]}")
         match = re.search(r'\[[\s\S]*\]', text)
         if not match:
             return []
         results = json.loads(match.group())
-        print(f"[YouTube classifier] Gemini classified {len(results)} technical videos out of {len(titles)}")
+        print(f"[YouTube classifier] Phi-4 classified {len(results)} technical videos out of {len(titles)}")
         return results
     except Exception as e:
-        print(f"[YouTube classifier] Gemini exception: {e}, falling back to keywords")
+        print(f"[YouTube classifier] Phi-4 exception: {e}, falling back to keywords")
         return []
 
 
@@ -852,8 +848,8 @@ def _parse_youtube_history(raw: bytes) -> dict[str, Any]:
     for batch_start in range(0, len(videos), 50):
         batch = videos[batch_start:batch_start + 50]
         titles = [v["title"] for v in batch]
-        results = _classify_videos_gemini(titles)
-        if results:  # Gemini returned classifications
+        results = _classify_videos_phi4(titles)
+        if results:  # Phi-4 returned classifications
             gemini_worked = True
             classified = {r["index"] - 1: r.get("category", "Technical") for r in results if isinstance(r, dict)}
             for idx, video in enumerate(batch):
@@ -977,12 +973,9 @@ def _fetch_youtube_liked(access_token: str) -> dict[str, Any]:
     }
 
 
-# ── Gemini AI pipeline ─────────────────────────────────────────────────────────
+# ── Phi-4 AI pipeline (GitHub Models) ─────────────────────────────────────────
 
-GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.5-flash:generateContent?key={key}"
-)
+GITHUB_MODELS_ENDPOINT = "https://models.inference.ai.azure.com"
 
 _CALENDAR_SCHEDULE_TRIGGERS = [
     "schedule", "plan my", "what should i", "focus today", "focus this week",
@@ -1074,38 +1067,35 @@ def _call_cohere(system_prompt: str, user_message: str) -> tuple[str, bool]:
         return f"Could not reach the AI service: {str(e)}", False
 
 
-def _call_gemini(system_prompt: str, user_message: str) -> tuple[str, bool]:
-    """Call Gemini and return (text, is_success). is_success indicates whether to use the text."""
-    if not GEMINI_API_KEY:
-        return "Gemini API key not configured. Set GEMINI_API_KEY in your .env file.", False
-
-    url     = GEMINI_URL.format(key=GEMINI_API_KEY)
-    payload = {
-        "contents":          [{"role": "user", "parts": [{"text": user_message}]}],
-        "systemInstruction": {"parts": [{"text": system_prompt}]},
-        "generationConfig":  {"temperature": 0.7, "maxOutputTokens": 1024},
-    }
+def _call_phi4(system_prompt: str, user_message: str) -> tuple[str, bool]:
+    """Call Phi-4 via GitHub Models and return (text, is_success)."""
+    if not GITHUB_MODELS_TOKEN:
+        return "GitHub Models token not configured. Set GITHUB_MODELS_TOKEN in your .env file.", False
+    from openai import OpenAI
     try:
-        resp = requests.post(url, json=payload, timeout=30)
-        if resp.status_code == 429:
-            return "AI is temporarily rate-limited. Please wait a moment and try again.", False
-        if resp.status_code != 200:
-            return f"AI unavailable (status {resp.status_code}). Please try again shortly.", False
-        candidates = resp.json().get("candidates", [])
-        if candidates:
-            text = candidates[0]["content"]["parts"][0]["text"]
-            return text, True
-        return "No response from Gemini.", False
-    except Exception:
+        client = OpenAI(base_url=GITHUB_MODELS_ENDPOINT, api_key=GITHUB_MODELS_TOKEN)
+        response = client.chat.completions.create(
+            model=os.getenv("GITHUB_MODELS_MODEL", "Phi-4"),
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user",   "content": user_message},
+            ],
+            temperature=0.7,
+            max_tokens=1024,
+        )
+        text = response.choices[0].message.content.strip()
+        return text, True
+    except Exception as e:
+        logger.error(f"Phi-4 call failed: {e}")
         return "Could not reach the AI service. Check your internet connection and try again.", False
 
 
 def call_ai(system_prompt: str, user_message: str) -> tuple[str, bool]:
-    """Call the appropriate AI API (Cohere preferred, fall back to Gemini)."""
+    """Call the appropriate AI API (Cohere preferred, fall back to Phi-4)."""
     if USE_COHERE:
         return _call_cohere(system_prompt, user_message)
     else:
-        return _call_gemini(system_prompt, user_message)
+        return _call_phi4(system_prompt, user_message)
 
 
 # ── Pydantic request/response models ──────────────────────────────────────────
