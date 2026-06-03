@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "architecture",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "7788", "--directory", "C:\\Users\\lenovo\\OneDrive\\Desktop\\microsoft hackathon"],
+      "port": 7788
+    }
+  ]
+}
