@@ -45,7 +45,7 @@ export default function Login() {
               Your entire<br />dev life.<br />Reflected.
             </h1>
             <p className="text-white/50 text-lg font-light leading-relaxed max-w-sm">
-              Connect GitHub, LeetCode, Codeforces, Gmail, Calendar, and YouTube. Get daily AI coaching powered by Gemini.
+              Connect GitHub, LeetCode, Codeforces, Gmail, Calendar, and YouTube. Get daily AI coaching powered by Microsoft Phi-4.
             </p>
           </div>
 
@@ -53,7 +53,7 @@ export default function Login() {
             {[
               { val: '6',  label: 'Live data sources' },
               { val: '3',  label: 'Personal goals'    },
-              { val: 'AI', label: 'Gemini'            },
+              { val: 'AI', label: 'Microsoft Phi-4'   },
               { val: '∞',  label: 'Free to use'       },
             ].map(({ val, label }) => (
               <div key={label} className="bg-white/5 p-6">

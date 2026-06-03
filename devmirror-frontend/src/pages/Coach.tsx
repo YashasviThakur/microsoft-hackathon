@@ -325,7 +325,7 @@ export default function Coach() {
                 <div className="text-center">
                   <div className="font-head font-semibold text-dm-text mb-1">DevMirror Coach</div>
                   <div className="text-sm text-dm-muted max-w-sm">
-                    Your personal AI agent. Powered by Gemini 3 on Google Cloud — fetches live data from GitHub, GitLab,
+                    Your personal AI agent. Powered by Microsoft Phi-4 via GitHub Models — fetches live data from GitHub, GitLab,
                     LeetCode, Codeforces, Gmail, and Calendar before every answer.
                   </div>
                 </div>

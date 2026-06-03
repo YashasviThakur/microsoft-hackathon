@@ -89,7 +89,7 @@ const TERMINAL_LINES = [
   '  -> Calendar   [########--]  2 sessions',
   '  -> MongoDB    [##########]  synced',
   '',
-  '  * Gemini coaching...',
+  '  * Microsoft Phi-4 coaching...',
   '',
   '  "You\'re building AND solving - that\'s rare."',
   '  "Today\'s nudge: try one System Design read."',
@@ -155,7 +155,7 @@ const SOURCES = [
 ]
 
 const FEATURES = [
-  { icon: Zap,      title: 'Daily AI Growth Report',   desc: 'Gemini analyses all your data sources and delivers a personalised coaching session every morning.' },
+  { icon: Zap,      title: 'Daily AI Growth Report',   desc: 'Microsoft Phi-4 analyses all your data sources and delivers a personalised coaching session every morning.' },
   { icon: Calendar, title: 'Closed-Loop Scheduling',   desc: 'Ask the coach to plan your week and it automatically creates Google Calendar events for you.' },
   { icon: Gitlab,   title: 'GitLab Integration',       desc: 'Private repo activity, merge requests, and commit velocity from GitLab alongside GitHub.' },
   { icon: Database, title: 'MongoDB Persistence',      desc: 'User profiles and Fernet-encrypted OAuth tokens stored in MongoDB Atlas — multi-tenant safe from day one.' },
@@ -195,7 +195,7 @@ export default function Landing() {
       <section className="bg-[#1A1A14] pt-36 pb-28 px-8">
         <div className="max-w-[1400px] mx-auto">
           <p className="text-dm-dim text-[11px] font-mono uppercase tracking-widest mb-10">
-            Gemini · FastAPI · MongoDB · React · Multi-tenant · Fernet Encrypted
+            Microsoft Phi-4 · GitHub Models · GitHub Copilot · FastAPI · MongoDB · React
           </p>
           <h1 className="text-display text-white mb-10 max-w-4xl">
             Built to track.<br />Built to grow.
@@ -203,7 +203,7 @@ export default function Landing() {
           <div className="flex flex-col lg:flex-row gap-10 items-start">
             <p className="text-white/55 text-lg font-light leading-relaxed max-w-md">
               DevMirror connects GitHub, GitLab, LeetCode, Codeforces, Gmail, Calendar, and YouTube —
-              then sends it all to Gemini to coach you, schedule your week, and surface real internship leads.
+              then sends it all to Microsoft Phi-4 to coach you, schedule your week, and surface real internship leads.
             </p>
             <div className="flex flex-col gap-4 shrink-0">
               <div className="flex gap-4">
@@ -227,7 +227,7 @@ export default function Landing() {
               <div className="flex items-center gap-6 text-[11px] font-mono text-white/35 pt-2">
                 <span>8 data sources</span>
                 <span className="w-px h-3 bg-white/15" />
-                <span>Gemini 3 Agent</span>
+                <span>Microsoft Phi-4 Agent</span>
                 <span className="w-px h-3 bg-white/15" />
                 <span>Free to use</span>
               </div>
@@ -281,7 +281,7 @@ export default function Landing() {
             <Terminal />
           </div>
           <div className="order-1 lg:order-2">
-            <p className="dm-label text-dm-dim mb-6">Gemini · MongoDB</p>
+            <p className="dm-label text-dm-dim mb-6">Microsoft Phi-4 · GitHub Models · MongoDB</p>
             <h2 className="text-display-md text-white mb-8">
               AI that coaches,<br />not just reports.
             </h2>
@@ -403,6 +403,57 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Microsoft Tech Stack — Agents League Hackathon */}
+      <section className="bg-[#1A1A14] py-24 px-8">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="mb-14">
+            <p className="dm-label text-dm-dim mb-5">Microsoft Agents League 2026</p>
+            <h2 className="text-display-md text-white max-w-2xl">
+              Built on Microsoft.<br />Powered to win.
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-px bg-white/10 border border-white/10">
+            {/* Phi-4 */}
+            <div className="bg-[#1A1A14] p-8 hover:bg-white/5 transition-colors">
+              <div className="w-10 h-10 bg-[#0078D4]/20 border border-[#0078D4]/30 flex items-center justify-center mb-6">
+                <span className="text-[#0078D4] font-black text-sm">Φ</span>
+              </div>
+              <h3 className="font-bold text-white text-base mb-2">Microsoft Phi-4</h3>
+              <p className="text-white/40 text-sm font-light leading-relaxed mb-4">
+                Microsoft's flagship small language model. Powers the multi-step AI Coach agent — fetches live data, reasons across 8 sources, schedules events.
+              </p>
+              <span className="text-[10px] font-mono text-[#0078D4] uppercase tracking-widest">Primary AI · Agent Reasoning</span>
+            </div>
+            {/* GitHub Models */}
+            <div className="bg-[#1A1A14] p-8 hover:bg-white/5 transition-colors">
+              <div className="w-10 h-10 bg-white/10 border border-white/20 flex items-center justify-center mb-6">
+                <Github size={16} className="text-white/70" />
+              </div>
+              <h3 className="font-bold text-white text-base mb-2">GitHub Models</h3>
+              <p className="text-white/40 text-sm font-light leading-relaxed mb-4">
+                Azure AI infrastructure via GitHub. OpenAI-compatible API serving Phi-4 with zero cloud setup — free for all developers.
+              </p>
+              <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest">Azure AI Infrastructure</span>
+            </div>
+            {/* GitHub Copilot */}
+            <div className="bg-[#1A1A14] p-8 hover:bg-white/5 transition-colors">
+              <div className="w-10 h-10 bg-[#6E40C9]/20 border border-[#6E40C9]/30 flex items-center justify-center mb-6">
+                <span className="text-[#6E40C9] font-black text-sm">✦</span>
+              </div>
+              <h3 className="font-bold text-white text-base mb-2">GitHub Copilot</h3>
+              <p className="text-white/40 text-sm font-light leading-relaxed mb-4">
+                Used throughout development — agent tool definitions, API migrations, frontend components, and architecture decisions all accelerated by Copilot.
+              </p>
+              <span className="text-[10px] font-mono text-[#6E40C9] uppercase tracking-widest">Dev Acceleration · Creative Apps</span>
+            </div>
+          </div>
+          <div className="mt-6 flex items-center gap-3 text-[11px] font-mono text-white/20">
+            <span className="w-2 h-2 rounded-full bg-[#0078D4] animate-pulse" />
+            <span>models.inference.ai.azure.com · OpenAI-compatible · Phi-4 · 8 live data sources · Multi-step agent loop</span>
+          </div>
+        </div>
+      </section>
+
       {/* Account tiers */}
       <section id="accounts" className="bg-[#F5F0E8] py-28 px-8">
         <div className="max-w-[1400px] mx-auto">
@@ -463,7 +514,7 @@ export default function Landing() {
           <div>
             <p className="text-white/70 text-lg font-light leading-relaxed mb-10 max-w-md">
               One click. Your entire developer journey — GitHub, GitLab, LeetCode, Codeforces,
-              Gmail, Calendar, YouTube — reflected back with Gemini AI coaching.
+              Gmail, Calendar, YouTube — reflected back with Microsoft Phi-4 AI coaching.
             </p>
             <button
               onClick={() => navigate('/login')}
@@ -481,7 +532,7 @@ export default function Landing() {
         <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="font-black text-white text-xl tracking-tighter">DevMirror</span>
           <span className="text-dm-dim text-xs font-mono">
-            Google Cloud Rapid Hackathon · 2026 · Gemini · FastAPI · React · MongoDB · Railway
+            Microsoft Agents League 2026 · Phi-4 · GitHub Models · GitHub Copilot · FastAPI · React · MongoDB
           </span>
         </div>
       </footer>

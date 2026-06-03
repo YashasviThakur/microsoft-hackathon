@@ -588,7 +588,7 @@ export default function Dashboard() {
                 { to: '/gmail',         label: 'Gmail Radar',   badge: 'Opportunities', accent: 'text-red-400',    bg: 'bg-red-500/10'    },
                 { to: '/youtube',       label: 'YouTube',        badge: 'Watch History', accent: 'text-red-500',    bg: 'bg-red-500/10'    },
                 { to: '/gitlab',        label: 'GitLab',         badge: 'MCP Partner',   accent: 'text-dm-purple-ll', bg: 'bg-dm-purple/15' },
-                { to: '/coach',         label: 'AI Coach',       badge: 'Gemini 3',      accent: 'text-dm-green',   bg: 'bg-dm-green/10'   },
+                { to: '/coach',         label: 'AI Coach',       badge: 'Phi-4',         accent: 'text-dm-green',   bg: 'bg-dm-green/10'   },
                 { to: '/growth-report', label: 'Growth Report',  badge: 'Daily AI',      accent: 'text-dm-amber',   bg: 'bg-dm-amber/10'   },
               ].map(({ to, label, badge, accent, bg }) => (
                 <button
