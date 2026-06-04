@@ -1,10 +1,10 @@
-import { ElementType, useEffect, useState, useCallback, useRef } from 'react'
+import { ElementType, useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useCountUp } from '../hooks/useCountUp'
 import { useNavigate } from 'react-router-dom'
 import {
   Github, Code2, Trophy, Calendar, RefreshCw,
   Flame, Star, TrendingUp, LogIn, Settings2,
-  CheckCircle2, XCircle, ChevronRight, GitBranch, GitMerge,
+  CheckCircle2, XCircle, ChevronRight, GitBranch, GitMerge, Sparkles,
 } from 'lucide-react'
 import clsx from 'clsx'
 import PageShell from '../components/PageShell'
@@ -229,6 +229,46 @@ export default function Dashboard() {
   const cfSolved  = useCountUp(codeforces?.solved       ?? 0, 1000, dataReady && !!codeforces)
   const lcTotal   = useCountUp(leetcode?.total_solved   ?? 0, 1200, dataReady && !!leetcode)
 
+  // -- Developer Growth Score (computed from live data) --------------------------
+  const rawScore = useMemo(() => {
+    if (loading) return 0
+    let score = 0
+    if (github) {
+      score += Math.min(github.commits_week / 7, 1) * 30
+      score += Math.min(github.repos / 15, 1) * 10
+    }
+    if (leetcode) {
+      score += Math.min(leetcode.total_solved / 150, 1) * 25
+      score += Math.min(leetcode.streak / 14, 1) * 10
+    }
+    if (codeforces) score += Math.min(codeforces.rating / 1800, 1) * 20
+    if (calendar)   score += Math.min(calendar.events.length / 5, 1) * 5
+    return Math.round(Math.min(score, 100))
+  }, [github, leetcode, codeforces, calendar, loading])
+
+  const growthScore = useCountUp(rawScore, 1600, dataReady)
+
+  const scoreBand = rawScore >= 75 ? { label: 'High Performer',     color: 'text-dm-green',      bar: 'bg-dm-green'      }
+                  : rawScore >= 50 ? { label: 'Active Developer',    color: 'text-dm-cyan',       bar: 'bg-dm-cyan'       }
+                  : rawScore >= 25 ? { label: 'Building Momentum',   color: 'text-dm-amber',      bar: 'bg-dm-amber'      }
+                  :                  { label: 'Getting Started',     color: 'text-dm-muted',      bar: 'bg-dm-border'     }
+
+  // -- Smart Weekly Briefing (Phi-4 generated, cached per day) ------------------
+  const [briefing, setBriefing]             = useState('')
+  const [loadingBriefing, setLoadingBriefing] = useState(false)
+
+  useEffect(() => {
+    if (!userId || loading) return
+    const key = `dm_briefing_${userId}_${new Date().toDateString()}`
+    const cached = sessionStorage.getItem(key)
+    if (cached) { setBriefing(cached); return }
+    setLoadingBriefing(true)
+    api.ask(userId, 'In exactly 2 sentences, give me a smart briefing of my developer activity this week — one sentence on what\'s going well, one on what needs attention. Be specific to my actual data.')
+      .then(r => { sessionStorage.setItem(key, r.response); setBriefing(r.response) })
+      .catch(() => setBriefing('Connect your accounts to get a personalised weekly briefing powered by Microsoft Phi-4.'))
+      .finally(() => setLoadingBriefing(false))
+  }, [userId, loading])
+
   // -- Not logged in state ------------------------------------------------------
   if (!loading && !userId) {
     return (
@@ -319,6 +359,30 @@ export default function Dashboard() {
           <GoalInput label="Focus Goal 2" value={goal2} onChange={v => handleGoalChange('goal_2', v)} />
           <GoalInput label="Focus Goal 3" value={goal3} onChange={v => handleGoalChange('goal_3', v)} />
         </div>
+
+        {/* Developer Growth Score */}
+        {dataReady && (
+          <div className="mt-4 pt-4 border-t border-dm-border animate-fade-up">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={13} className={scoreBand.color} />
+                <span className="text-xs font-semibold text-dm-text">Developer Growth Score</span>
+                <span className={`dm-badge text-[10px] border ${scoreBand.color} border-current`}>{scoreBand.label}</span>
+              </div>
+              <span className={`font-head font-bold text-2xl ${scoreBand.color}`}>{growthScore}<span className="text-sm text-dm-muted font-normal">/100</span></span>
+            </div>
+            <div className="h-1.5 bg-dm-border rounded-full overflow-hidden">
+              <div
+                className={`h-full ${scoreBand.bar} rounded-full transition-all duration-1500 ease-out`}
+                style={{ width: `${rawScore}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-dm-dim font-mono mt-1">
+              <span>GitHub · LeetCode · Codeforces · Calendar</span>
+              <span>Powered by DevMirror</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -588,8 +652,31 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* Weekly Briefing — Phi-4 generated */}
+          <div className="md:col-span-2 xl:col-span-3 animate-fade-up" style={{ animationDelay: '380ms' }}>
+            <div className="dm-card p-5 flex items-start gap-4">
+              <div className="w-9 h-9 rounded-lg bg-dm-purple/15 flex items-center justify-center shrink-0">
+                <Sparkles size={16} className="text-dm-purple-ll animate-pulse-slow" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold text-dm-text">Weekly Briefing</span>
+                  <span className="dm-badge-purple text-[10px]">Microsoft Phi-4</span>
+                </div>
+                {loadingBriefing ? (
+                  <div className="space-y-2">
+                    <div className="h-3 bg-dm-border rounded animate-pulse w-full" />
+                    <div className="h-3 bg-dm-border rounded animate-pulse w-4/5" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-dm-muted leading-relaxed animate-fade-in">{briefing}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Quick navigation row — spans full width */}
-          <div className="md:col-span-2 xl:col-span-3 animate-fade-up" style={{ animationDelay: '400ms' }}>
+          <div className="md:col-span-2 xl:col-span-3 animate-fade-up" style={{ animationDelay: '450ms' }}>
             <div className="dm-label mb-3">Quick Access</div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[

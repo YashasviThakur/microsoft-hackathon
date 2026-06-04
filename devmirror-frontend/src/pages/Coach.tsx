@@ -136,31 +136,72 @@ const TOOL_LABELS: Record<string, string> = {
 }
 
 function AgentReasoningPanel({ toolCalls }: { toolCalls: { tool: string; args: string[] }[] }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   if (!toolCalls.length) return null
   return (
-    <div className="mt-3 rounded-lg border border-dm-purple/20 bg-dm-surface-2/40 overflow-hidden">
+    <div className="mb-3 rounded-lg border border-dm-purple/20 bg-dm-surface-2/40 overflow-hidden animate-fade-in">
       <button
         onClick={() => setOpen(v => !v)}
         className="w-full flex items-center gap-2 px-3 py-2 text-xs text-dm-muted hover:text-dm-text transition-colors"
       >
         <Wrench size={11} className="text-dm-purple-ll" />
-        <span className="font-mono">{toolCalls.length} tool{toolCalls.length > 1 ? 's' : ''} called</span>
-        <ChevronDown size={11} className={clsx('ml-auto transition-transform', open && 'rotate-180')} />
+        <span className="font-mono text-dm-purple-ll">{toolCalls.length} tool{toolCalls.length > 1 ? 's' : ''} called by Phi-4</span>
+        <ChevronDown size={11} className={clsx('ml-auto transition-transform duration-200', open && 'rotate-180')} />
       </button>
       {open && (
         <div className="px-3 pb-3 space-y-1.5 border-t border-dm-border/50">
           {toolCalls.map((tc, i) => (
-            <div key={i} className="flex items-center gap-2 text-[11px]">
-              <span className="w-1 h-1 rounded-full bg-dm-purple-ll shrink-0" />
+            <div
+              key={i}
+              style={{ animationDelay: `${i * 60}ms` }}
+              className="flex items-center gap-2 text-[11px] animate-slide-up"
+            >
+              <span className="text-dm-green">✓</span>
               <span className="text-dm-purple-ll font-mono">{TOOL_LABELS[tc.tool] ?? tc.tool}</span>
               {tc.args.length > 0 && (
-                <span className="text-dm-muted">({tc.args.join(', ')})</span>
+                <span className="text-dm-muted truncate">({tc.args.join(', ')})</span>
               )}
             </div>
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// -- Live thinking trace while agent runs ---------------------------------------
+const THINKING_STEPS = [
+  { icon: '🔍', text: 'Fetching GitHub activity...' },
+  { icon: '📊', text: 'Reading LeetCode progress...' },
+  { icon: '⚡', text: 'Checking Codeforces rating...' },
+  { icon: '📅', text: 'Scanning Calendar events...' },
+  { icon: '💡', text: 'Microsoft Phi-4 synthesizing...' },
+]
+
+function ThinkingBubble() {
+  const [step, setStep] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setStep(s => Math.min(s + 1, THINKING_STEPS.length - 1)), 900)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <div className="bg-dm-surface border border-dm-purple/20 rounded-xl px-4 py-3 space-y-2 min-w-[220px]">
+      {THINKING_STEPS.slice(0, step + 1).map((s, i) => (
+        <div
+          key={i}
+          style={{ animationDelay: `${i * 40}ms` }}
+          className="flex items-center gap-2 text-xs animate-fade-in"
+        >
+          <span className="text-base leading-none">{s.icon}</span>
+          <span className={i < step ? 'text-dm-muted line-through' : 'text-dm-purple-ll'}>
+            {s.text}
+          </span>
+          {i < step
+            ? <span className="text-dm-green ml-auto text-[10px]">✓</span>
+            : <span className="w-1.5 h-1.5 rounded-full bg-dm-purple-ll animate-pulse ml-auto shrink-0" />
+          }
+        </div>
+      ))}
     </div>
   )
 }
@@ -351,17 +392,11 @@ export default function Coach() {
                   />
                 ))}
                 {loading && (
-                  <div className="flex gap-3 items-start">
-                    <div className="w-7 h-7 rounded-lg bg-dm-purple shadow-glow-sm flex items-center justify-center shrink-0">
+                  <div className="flex gap-3 items-start animate-fade-in">
+                    <div className="w-7 h-7 rounded-lg bg-dm-purple shadow-glow-sm flex items-center justify-center shrink-0 mt-0.5">
                       <Bot size={14} className="text-white" />
                     </div>
-                    <div className="bg-dm-surface border border-dm-purple/20 rounded-xl px-4 py-3">
-                      <div className="flex gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-dm-purple animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-dm-purple animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-dm-purple animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
-                    </div>
+                    <ThinkingBubble />
                   </div>
                 )}
                 <div ref={bottomRef} />
