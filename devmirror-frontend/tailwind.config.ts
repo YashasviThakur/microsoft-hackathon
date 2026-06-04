@@ -46,13 +46,15 @@ export default {
       },
       animation: {
         'pulse-slow': 'pulse 3s ease-in-out infinite',
-        'fade-in':    'fadeIn 0.5s ease-out',
-        'slide-up':   'slideUp 0.5s ease-out',
+        'fade-in':    'fadeIn 0.5s ease-out both',
+        'fade-up':    'fadeUp 0.55s ease-out both',
+        'slide-up':   'slideUp 0.5s ease-out both',
         'blink':      'blink 1s step-end infinite',
         'ticker':     'ticker 40s linear infinite',
       },
       keyframes: {
         fadeIn:   { from: { opacity: '0' }, to: { opacity: '1' } },
+        fadeUp:   { from: { opacity: '0', transform: 'translateY(22px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
         slideUp:  { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
         blink:    { '0%,100%': { opacity: '1' }, '50%': { opacity: '0' } },
         ticker:   { from: { transform: 'translateX(0)' }, to: { transform: 'translateX(-50%)' } },
