@@ -1,4 +1,5 @@
 import { ElementType, useEffect, useState, useCallback, useRef } from 'react'
+import { useCountUp } from '../hooks/useCountUp'
 import { useNavigate } from 'react-router-dom'
 import {
   Github, Code2, Trophy, Calendar, RefreshCw,
@@ -43,7 +44,8 @@ function GitHubGrid({ grid }: { grid: number[][] | null | undefined }) {
             <div
               key={di}
               title={`${count} commits`}
-              className={`w-2 h-2 rounded-sm ${getColor(count)} transition-colors duration-200`}
+              style={{ animationDelay: `${Math.min((ci * 7 + di) * 1.5, 500)}ms` }}
+              className={`w-2 h-2 rounded-sm ${getColor(count)} animate-fade-in`}
             />
           ))}
         </div>
@@ -221,6 +223,12 @@ export default function Dashboard() {
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening'
   const userLabel = profile?.name ?? (profile?.email ? profile.email.split('@')[0] : `User #${userId}`)
 
+  const dataReady = !loading
+  const cfRating  = useCountUp(codeforces?.rating       ?? 0, 1400, dataReady && !!codeforces)
+  const cfPeak    = useCountUp(codeforces?.max_rating   ?? 0, 1200, dataReady && !!codeforces)
+  const cfSolved  = useCountUp(codeforces?.solved       ?? 0, 1000, dataReady && !!codeforces)
+  const lcTotal   = useCountUp(leetcode?.total_solved   ?? 0, 1200, dataReady && !!leetcode)
+
   // -- Not logged in state ------------------------------------------------------
   if (!loading && !userId) {
     return (
@@ -297,7 +305,7 @@ export default function Dashboard() {
       )}
 
       {/* -- Goals header row -- */}
-      <div className="dm-card p-5 mb-5">
+      <div className="dm-card p-5 mb-5 animate-fade-up" style={{ animationDelay: '0ms' }}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-lg bg-dm-purple flex items-center justify-center shadow-glow-sm">
             <span className="text-white font-mono font-bold text-sm">D</span>
@@ -319,8 +327,8 @@ export default function Dashboard() {
         /* -- Bento grid -- */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
 
-          {/* GitHub contribution grid ? spans 2 cols */}
-          <div className="md:col-span-2 dm-card p-5">
+          {/* GitHub contribution grid — spans 2 cols */}
+          <div className="md:col-span-2 dm-card p-5 animate-fade-up" style={{ animationDelay: '60ms' }}>
             <div className="flex items-center gap-2 mb-4">
               <Github size={15} className="text-white" />
               <span className="text-sm font-semibold text-dm-text">GitHub Activity</span>
@@ -365,7 +373,7 @@ export default function Dashboard() {
           </div>
 
           {/* Codeforces */}
-          <div className="dm-card p-5">
+          <div className="dm-card p-5 animate-fade-up" style={{ animationDelay: '160ms' }}>
             <div className="flex items-center gap-2 mb-5">
               <Trophy size={15} className="text-dm-cyan" />
               <span className="text-sm font-semibold text-dm-text">Codeforces</span>
@@ -380,15 +388,15 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
-                    <div className="font-head font-bold text-2xl text-dm-cyan">{codeforces.rating}</div>
+                    <div className="font-head font-bold text-2xl text-dm-cyan">{cfRating}</div>
                     <div className="text-[10px] text-dm-muted">Current</div>
                   </div>
                   <div>
-                    <div className="font-head font-bold text-xl text-dm-muted">{codeforces.max_rating}</div>
+                    <div className="font-head font-bold text-xl text-dm-muted">{cfPeak}</div>
                     <div className="text-[10px] text-dm-muted">Peak</div>
                   </div>
                   <div>
-                    <div className="font-head font-bold text-xl text-dm-text">{codeforces.solved}</div>
+                    <div className="font-head font-bold text-xl text-dm-text">{cfSolved}</div>
                     <div className="text-[10px] text-dm-muted">Solved</div>
                   </div>
                 </div>
@@ -420,7 +428,7 @@ export default function Dashboard() {
           </div>
 
           {/* LeetCode progress */}
-          <div className="dm-card p-5">
+          <div className="dm-card p-5 animate-fade-up" style={{ animationDelay: '220ms' }}>
             <div className="flex items-center gap-2 mb-5">
               <Code2 size={15} className="text-dm-amber" />
               <span className="text-sm font-semibold text-dm-text">LeetCode</span>
@@ -434,7 +442,7 @@ export default function Dashboard() {
             {leetcode ? (
               <div className="space-y-4">
                 <div className="text-center">
-                  <div className="font-head font-bold text-3xl text-dm-amber">{leetcode.total_solved}</div>
+                  <div className="font-head font-bold text-3xl text-dm-amber">{lcTotal}</div>
                   <div className="text-xs text-dm-muted">problems solved</div>
                 </div>
 
@@ -476,7 +484,7 @@ export default function Dashboard() {
           </div>
 
           {/* GitLab */}
-          <div className="dm-card p-5">
+          <div className="dm-card p-5 animate-fade-up" style={{ animationDelay: '280ms' }}>
             <div className="flex items-center gap-2 mb-5">
               <GitBranch size={15} className="text-dm-purple-ll" />
               <span className="text-sm font-semibold text-dm-text">GitLab</span>
@@ -536,7 +544,7 @@ export default function Dashboard() {
           </div>
 
           {/* Google Calendar */}
-          <div className="dm-card p-5">
+          <div className="dm-card p-5 animate-fade-up" style={{ animationDelay: '340ms' }}>
             <div className="flex items-center gap-2 mb-5">
               <Calendar size={15} className="text-dm-green" />
               <span className="text-sm font-semibold text-dm-text">Upcoming Events</span>
@@ -580,8 +588,8 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Quick navigation row ? spans full width */}
-          <div className="md:col-span-2 xl:col-span-3">
+          {/* Quick navigation row — spans full width */}
+          <div className="md:col-span-2 xl:col-span-3 animate-fade-up" style={{ animationDelay: '400ms' }}>
             <div className="dm-label mb-3">Quick Access</div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
